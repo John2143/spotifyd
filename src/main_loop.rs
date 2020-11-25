@@ -2,23 +2,15 @@
 use crate::dbus_mpris::DbusServer;
 use crate::process::{spawn_program_on_event, Child};
 use futures::{self, Async, Future, Poll, Stream};
-use librespot::{
-    connect::{
+use librespot::{connect::{
         discovery::DiscoveryStream,
         spirc::{Spirc, SpircTask},
-    },
-    core::{
-        cache::Cache,
-        config::{ConnectConfig, DeviceType, SessionConfig},
-        session::Session,
-    },
-    playback::{
+    }, core::{cache::Cache, config::{ConnectConfig, DeviceType, SessionConfig}, session::Session, config::VolumeCtrl}, playback::{
         audio_backend::Sink,
         config::PlayerConfig,
         mixer::Mixer,
         player::{Player, PlayerEvent},
-    },
-};
+    }};
 use log::error;
 use std::{io, rc::Rc};
 use tokio_core::reactor::Handle;
@@ -169,7 +161,10 @@ impl Future for MainLoopState {
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: self.device_type,
                         volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
-                        linear_volume: self.linear_volume,
+                        volume_ctrl: match self.linear_volume {
+                            true => VolumeCtrl::Linear,
+                            false => VolumeCtrl::Log,
+                        },
                     },
                     session.clone(),
                     player,

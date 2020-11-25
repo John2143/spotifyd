@@ -4,19 +4,10 @@ use crate::{config, main_loop};
 use futures::{self, Future};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
-use librespot::{
-    connect::discovery::discovery,
-    core::{
-        authentication::get_credentials,
-        cache::Cache,
-        config::{ConnectConfig, DeviceType},
-        session::Session,
-    },
-    playback::{
+use librespot::{connect::discovery::discovery, core::{authentication::get_credentials, cache::Cache, config::{ConnectConfig, DeviceType}, session::Session, config::VolumeCtrl}, playback::{
         audio_backend::{Sink, BACKENDS},
         mixer::{self, Mixer},
-    },
-};
+    }};
 use log::{error, info};
 use std::str::FromStr;
 use std::{io, process::exit};
@@ -94,7 +85,10 @@ pub(crate) fn initial_state(
             name: config.device_name.clone(),
             device_type,
             volume: mixer().volume(),
-            linear_volume,
+            volume_ctrl: match linear_volume {
+                true => VolumeCtrl::Linear,
+                false => VolumeCtrl::Log,
+            },
         },
         device_id,
         zeroconf_port,
